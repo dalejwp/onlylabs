@@ -5,11 +5,17 @@ export async function GET() {
 
   const stream = new ReadableStream({
     start(controller) {
+      let closed = false;
+
       const send = (data: any) => {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+        if (closed) return;
+        try {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+        } catch {
+          closed = true;
+        }
       };
 
-      // initial hello
       send({ type: "hello", t: Date.now() });
 
       const onEvent = (evt: any) => send(evt);
@@ -18,6 +24,7 @@ export async function GET() {
       const keepAlive = setInterval(() => send({ type: "ping", t: Date.now() }), 15000);
 
       return () => {
+        closed = true;
         clearInterval(keepAlive);
         mcBus.off("event", onEvent);
       };
