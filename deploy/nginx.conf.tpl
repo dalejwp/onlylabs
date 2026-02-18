@@ -30,7 +30,16 @@ server {
     client_max_body_size 50M;
 
     # Health check — bypass auth, no access log
+    # Proxies /_health → Next.js /api/health (underscore routes not served by Next.js)
     location = /_health {
+        proxy_pass         http://127.0.0.1:${APP_PORT}/api/health;
+        proxy_http_version 1.1;
+        proxy_set_header   Host $host;
+        access_log         off;
+    }
+
+    # Direct /api/health access (e.g. from docker-compose or internal checks)
+    location = /api/health {
         proxy_pass         http://127.0.0.1:${APP_PORT};
         proxy_http_version 1.1;
         proxy_set_header   Host $host;

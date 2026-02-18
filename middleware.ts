@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const PUBLIC_PREFIXES = [
   '/login',
   '/api/login',
-  '/api/_health',
-  '/_health',
+  '/api/health',
   '/_next',
   '/favicon.ico',
 ];

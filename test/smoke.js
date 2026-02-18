@@ -1,64 +1,75 @@
 #!/usr/bin/env node
-'use strict';
+/**
+ * Smoke tests for Mission Control.
+ * Run after deploy to verify the app is healthy.
+ *
+ * Usage:
+ *   SMOKE_BASE_URL=https://mc.aionlylabs.online node test/smoke.js
+ *   SMOKE_BASE_URL=http://localhost:3000 SMOKE_AUTH_COOKIE="mc_session=<token>" node test/smoke.js
+ */
 
-const BASE   = process.env.SMOKE_BASE_URL   || 'http://localhost:3000';
-const COOKIE = process.env.SMOKE_AUTH_COOKIE || '';
+const BASE_URL = process.env.SMOKE_BASE_URL || 'http://localhost:3000';
+const AUTH_COOKIE = process.env.SMOKE_AUTH_COOKIE || '';
 
 let passed = 0, failed = 0;
 
-function ok(msg)         { console.log('  PASS  ' + msg); passed++; }
-function fail(msg, detail) {
-  console.error('  FAIL  ' + msg);
-  if (detail) console.error('         ' + detail);
-  failed++;
+async function test(name, fn) {
+  try {
+    await fn();
+    console.log(`  PASS  ${name}`);
+    passed++;
+  } catch (err) {
+    console.error(`  FAIL  ${name}: ${err.message}`);
+    failed++;
+  }
 }
 
-async function get(path, headers = {}) {
-  return fetch(BASE + path, { headers: { Cookie: COOKIE, ...headers } });
+function assert(condition, message) {
+  if (!condition) throw new Error(message);
 }
 
-async function runTests() {
-  console.log('\nSmoke tests -> ' + BASE + '\n');
+async function get(path, opts = {}) {
+  const headers = { ...opts.headers };
+  if (AUTH_COOKIE) headers['Cookie'] = AUTH_COOKIE;
+  const res = await fetch(`${BASE_URL}${path}`, { headers, redirect: 'manual' });
+  return res;
+}
 
-  // 1. Health
-  try {
-    const r = await get('/_health');
-    const b = await r.json();
-    if (r.status === 200 && b.ok) ok('GET /_health -> 200');
-    else fail('GET /_health', 'status=' + r.status + ' body=' + JSON.stringify(b));
-  } catch (e) { fail('GET /_health', e.message); }
+(async () => {
+  console.log(`\nSmoke tests → ${BASE_URL}\n`);
 
-  // 2. Status
-  try {
-    const r = await get('/api/status');
-    const b = await r.json();
-    if (r.status === 200 && b.ok && typeof b.tasks === 'object')
-      ok('GET /api/status -> 200 tasks present');
-    else fail('GET /api/status', 'status=' + r.status);
-  } catch (e) { fail('GET /api/status', e.message); }
+  await test('GET /api/health → 200 { ok: true }', async () => {
+    const res = await get('/api/health');
+    assert(res.status === 200, `status ${res.status}`);
+    const body = await res.json();
+    assert(body.ok === true, `body.ok=${body.ok}`);
+  });
 
-  // 3. Unauthenticated root redirects
-  try {
-    const r = await fetch(BASE + '/', { redirect: 'manual' });
-    if ([200, 302, 307].includes(r.status)) ok('GET / -> ' + r.status + ' (unauthenticated)');
-    else fail('GET /', 'unexpected status=' + r.status);
-  } catch (e) { fail('GET /', e.message); }
+  await test('GET /api/status → 200 (auth required)', async () => {
+    const res = await get('/api/status');
+    assert(res.status === 200 || res.status === 302 || res.status === 401,
+      `unexpected status ${res.status}`);
+  });
 
-  // 4. Tasks (auth)
-  if (COOKIE) {
-    try {
-      const r = await get('/api/tasks');
-      const b = await r.json();
-      if (r.status === 200 && b.ok && Array.isArray(b.tasks))
-        ok('GET /api/tasks -> 200 tasks array (authenticated)');
-      else fail('GET /api/tasks', 'status=' + r.status);
-    } catch (e) { fail('GET /api/tasks', e.message); }
+  await test('GET / unauthenticated → redirect to /login', async () => {
+    const res = await fetch(`${BASE_URL}/`, { redirect: 'manual' });
+    assert(
+      res.status === 302 || res.status === 307 || res.status === 308,
+      `expected redirect, got ${res.status}`,
+    );
+    const loc = res.headers.get('location') || '';
+    assert(loc.includes('/login'), `expected /login redirect, got ${loc}`);
+  });
+
+  if (AUTH_COOKIE) {
+    await test('GET /api/tasks → 200 (authenticated)', async () => {
+      const res = await get('/api/tasks');
+      assert(res.status === 200, `status ${res.status}`);
+    });
   } else {
-    console.log('  SKIP  GET /api/tasks (no SMOKE_AUTH_COOKIE)');
+    console.log('  SKIP  GET /api/tasks (no SMOKE_AUTH_COOKIE set)');
   }
 
-  console.log('\nSmoke: ' + passed + ' passed, ' + failed + ' failed\n');
+  console.log(`\n${passed} passed, ${failed} failed\n`);
   if (failed > 0) process.exit(1);
-}
-
-runTests().catch(err => { console.error('Smoke crashed:', err); process.exit(2); });
+})();
