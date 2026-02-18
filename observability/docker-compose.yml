@@ -3,8 +3,7 @@ services:
     image: prom/prometheus:v2.53.4
     container_name: prometheus
     restart: unless-stopped
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    network_mode: host
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
@@ -12,16 +11,16 @@ services:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.retention.time=30d
       - --web.listen-address=127.0.0.1:9090
-    ports:
-      - "127.0.0.1:9090:9090"
 
   grafana:
     image: grafana/grafana:11.4.0
     container_name: grafana
     restart: unless-stopped
+    network_mode: host
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-changeme}
+      GF_SERVER_HTTP_PORT: "3001"
       GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s/grafana"
       GF_SERVER_SERVE_FROM_SUB_PATH: "true"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
@@ -29,10 +28,6 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana-data:/var/lib/grafana
-    ports:
-      - "127.0.0.1:3001:3000"
-    depends_on:
-      - prometheus
 
 volumes:
   prometheus-data:
