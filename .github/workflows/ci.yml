@@ -1,0 +1,120 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - run: npx prisma generate --schema=./prisma/schema.prisma
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npm test --if-present
+        env:
+          DATABASE_URL: "file:/tmp/ci-test.db"
+          NODE_ENV: test
+          MC_ADMIN_EMAIL: ci@example.com
+          MC_ADMIN_PASSWORD: ci-password
+          MC_AUTH_SECRET: ci-secret-placeholder-minimum-32-chars-xx
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=,format=short
+            type=ref,event=branch
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  preflight:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - run: npx prisma generate --schema=./prisma/schema.prisma
+      - name: Run preflight
+        run: node tools/preflight.js
+        env:
+          DATABASE_URL: "file:/tmp/ci-preflight.db"
+          NODE_ENV: production
+          MC_ADMIN_EMAIL: ci@example.com
+          MC_ADMIN_PASSWORD: ci-password
+          MC_AUTH_SECRET: ci-secret-placeholder-minimum-32-chars-xx
+
+  migrate:
+    needs: preflight
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Migrate staging DB
+        run: bash prisma/ci-migrate.sh
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DB_URL }}
+
+  smoke:
+    needs: migrate
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Smoke tests
+        run: node test/smoke.js
+        env:
+          SMOKE_BASE_URL: ${{ secrets.STAGING_URL }}
+          SMOKE_AUTH_COOKIE: ${{ secrets.STAGING_SESSION_COOKIE }}
