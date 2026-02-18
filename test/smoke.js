@@ -45,16 +45,23 @@ async function get(path, opts = {}) {
     assert(body.ok === true, `body.ok=${body.ok}`);
   });
 
-  await test('GET /api/status → 200 (auth required)', async () => {
+  await test('GET /api/status unauthenticated → redirect to /login', async () => {
     const res = await get('/api/status');
-    assert(res.status === 200 || res.status === 302 || res.status === 401,
-      `unexpected status ${res.status}`);
+    // Next.js middleware uses 307; also accept 302, 308, 401
+    assert(
+      [302, 307, 308, 401].includes(res.status),
+      `expected redirect or 401, got ${res.status}`,
+    );
+    if (res.status !== 401) {
+      const loc = res.headers.get('location') || '';
+      assert(loc.includes('/login'), `expected /login redirect, got location: ${loc}`);
+    }
   });
 
   await test('GET / unauthenticated → redirect to /login', async () => {
     const res = await fetch(`${BASE_URL}/`, { redirect: 'manual' });
     assert(
-      res.status === 302 || res.status === 307 || res.status === 308,
+      [302, 307, 308].includes(res.status),
       `expected redirect, got ${res.status}`,
     );
     const loc = res.headers.get('location') || '';
