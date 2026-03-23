@@ -1,16 +1,5 @@
 import crypto from "crypto";
 
-function b64url(input: Buffer | string) {
-  const buf = Buffer.isBuffer(input) ? input : Buffer.from(input);
-  return buf.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-}
-
-function b64urlDecode(input: string) {
-  const pad = input.length % 4 === 0 ? "" : "=".repeat(4 - (input.length % 4));
-  const s = input.replace(/-/g, "+").replace(/_/g, "/") + pad;
-  return Buffer.from(s, "base64");
-}
-
 export type SessionPayload = { e: string; t: number };
 
 export function getEnvAuth() {
@@ -24,8 +13,8 @@ export function getEnvAuth() {
 }
 
 export function signSession(payload: SessionPayload, secret: string) {
-  const body = b64url(JSON.stringify(payload));
-  const sig = b64url(crypto.createHmac("sha256", secret).update(body).digest());
+  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const sig = crypto.createHmac("sha256", secret).update(body).digest("base64url");
   return `${body}.${sig}`;
 }
 
@@ -33,12 +22,12 @@ export function verifySession(token: string, secret: string, maxAgeMs: number) {
   const parts = token.split(".");
   if (parts.length !== 2) return null;
   const [body, sig] = parts;
-  const expected = b64url(crypto.createHmac("sha256", secret).update(body).digest());
+  const expected = crypto.createHmac("sha256", secret).update(body).digest("base64url");
 
   if (sig.length !== expected.length) return null;
   if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
 
-  const payload = JSON.parse(b64urlDecode(body).toString("utf8")) as SessionPayload;
+  const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as SessionPayload;
   if (!payload?.e || !payload?.t) return null;
   if (Date.now() - payload.t > maxAgeMs) return null;
   return payload;
