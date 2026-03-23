@@ -1,12 +1,3 @@
-function b64url(input: Buffer | string) {
-  const buf = Buffer.isBuffer(input) ? input : Buffer.from(input);
-  return buf
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/g, "");
-}
-
 export async function sendEmail(subject: string, body: string) {
   const key = process.env.MATON_API_KEY;
   const to = process.env.MC_NOTIFY_EMAIL_TO;
@@ -25,7 +16,7 @@ export async function sendEmail(subject: string, body: string) {
     `\r\n` +
     `${body}\r\n`;
 
-  const payload = { raw: b64url(raw) };
+  const payload = { raw: Buffer.from(raw).toString("base64url") };
 
   const res = await fetch("https://gateway.maton.ai/google-mail/gmail/v1/users/me/messages/send", {
     method: "POST",
