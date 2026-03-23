@@ -9,14 +9,6 @@ import {
   http5xxTotal,
 } from "@/lib/metrics";
 
-function statusLabel(s: string) {
-  if (s === "TODO") return "Todo";
-  if (s === "DOING") return "Doing";
-  if (s === "REVIEW") return "Review";
-  if (s === "DONE") return "Done";
-  return s;
-}
-
 export async function GET() {
   try {
     const tasks = await prisma.task.findMany({
@@ -105,7 +97,7 @@ export async function PATCH(req: Request) {
     if (toStatus === "DONE") {
       await sendEmail(
         `Task completed: ${task.title}`,
-        `Task moved to Done.\n\nTitle: ${task.title}\nStatus: ${statusLabel(toStatus)}\n\nArc`
+        `Task moved to Done.\n\nTitle: ${task.title}\nStatus: Done\n\nArc`
       );
     }
 
