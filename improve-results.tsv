@@ -1,0 +1,12 @@
+iteration	score	delta	status	hypothesis
+0	0.000	0.000	baseline	Initial state — 168 TypeScript errors, node_modules missing
+1	0.994	+0.994	improved	npm install — resolved 167 missing module/type errors (node_modules was missing)
+2	1.000	+0.006	improved	prisma generate — resolved final PrismaClient export error (.prisma/client was never generated)
+3	1.000	+0.000	simplified	Removed dead statusLabel function in tasks/route.ts (always returned "Done")
+4	1.000	+0.000	simplified	Deleted dead idempotency.ts module (never imported by any route)
+5	1.000	+0.000	simplified	Removed orphaned idempotencyHitsTotal/MissesTotal from metrics.ts
+6	1.000	+0.000	simplified	Replaced custom b64url in matonMail.ts with Buffer.toString("base64url")
+7	1.000	+0.000	simplified	Removed b64url/b64urlDecode helpers in auth.ts — replaced with Node native base64url
+8	1.000	+0.000	simplified	Removed (prisma as any) cast in run-from-artifact — prisma.job is typed
+9	1.000	+0.000	simplified	Replaced dynamic await import('crypto') with static import in run-from-artifact
+10	1.000	+0.000	simplified	Removed (req as any) cast and req.headers? check in metrics/route.ts
