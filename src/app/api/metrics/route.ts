@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: Request) {
   const token = process.env.METRICS_TOKEN;
   if (token) {
-    const auth = req.headers ? (req as any).headers.get('authorization') : '';
+    const auth = req.headers.get('authorization') ?? '';
     if (auth !== `Bearer ${token}`) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
