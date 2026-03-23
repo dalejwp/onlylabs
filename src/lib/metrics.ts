@@ -33,19 +33,6 @@ if (!g.__mcMetrics) {
       registers: [reg],
     }),
 
-    // ── Idempotency ────────────────────────────────────────────────────────
-    idempotencyHitsTotal: new Counter({
-      name: 'mission_control_idempotency_hits_total',
-      help: 'Total idempotency cache hits (duplicate requests replayed)',
-      registers: [reg],
-    }),
-
-    idempotencyMissesTotal: new Counter({
-      name: 'mission_control_idempotency_misses_total',
-      help: 'Total idempotency cache misses (new requests processed)',
-      registers: [reg],
-    }),
-
     // ── DB errors ──────────────────────────────────────────────────────────
     dbErrorsTotal: new Counter({
       name: 'mission_control_db_errors_total',
@@ -86,8 +73,6 @@ export const {
   tasksCreatedTotal,
   tasksMovedTotal,
   jobsEnqueuedTotal,
-  idempotencyHitsTotal,
-  idempotencyMissesTotal,
   dbErrorsTotal,
   http5xxTotal,
   preflightSuccess,
@@ -97,8 +82,6 @@ export const {
   tasksCreatedTotal: Counter;
   tasksMovedTotal: Counter<'from_status' | 'to_status'>;
   jobsEnqueuedTotal: Counter<'job_type'>;
-  idempotencyHitsTotal: Counter;
-  idempotencyMissesTotal: Counter;
   dbErrorsTotal: Counter<'route'>;
   http5xxTotal: Counter<'route'>;
   preflightSuccess: Gauge;
