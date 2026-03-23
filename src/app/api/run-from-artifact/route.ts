@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomUUID } from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 import { prisma } from '@/lib/db';
@@ -21,7 +22,6 @@ export async function POST(req: NextRequest) {
         'Please migrate to uploading an artifact via POST /api/artifacts first.',
       );
       await fs.mkdir(ARTIFACT_DIR, { recursive: true });
-      const { randomUUID } = await import('crypto');
       artifactId = randomUUID();
       const filename = `${artifactId}.txt`;
       await fs.writeFile(path.join(ARTIFACT_DIR, filename), String(body.content));
