@@ -5,6 +5,8 @@ const PUBLIC_PREFIXES = [
   '/api/login',
   '/api/health',
   '/api/metrics',
+  '/api/memory',      // bearer-token auth, not cookie
+  '/api/browser-use', // bearer-token auth, not cookie
   '/_next',
   '/favicon.ico',
 ];

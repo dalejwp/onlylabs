@@ -105,4 +105,4 @@ Required secrets in GitHub:
 
 - [Golden Path Runbook](docs/golden-path.md) — build / run / deploy / rollback
 - [Monitoring Guide](docs/monitoring.md) — Prometheus metrics + alert rules
-- [Obsidian MCP Setup](docs/obsidian-mcp-setup.md) — wire an Obsidian vault into Claude Code as cross-device persistent memory
+- [Cloud Memory + MCP Setup](docs/cloud-memory-setup.md) — register Claude Code against Mission Control for cross-device persistent memory and Browser Use automation

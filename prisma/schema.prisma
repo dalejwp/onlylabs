@@ -71,3 +71,11 @@ model Job {
 
   @@index([status, runAt])
 }
+
+// ── Persistent memory (for Claude Code / agents via /api/memory) ──────────────
+model Memory {
+  path      String   @id           // e.g. "profile", "sessions/2026-04-23"
+  content   String                 // free-form text (usually markdown)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
