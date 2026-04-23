@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["browser-use-sdk>=3,<4"]
+# ///
 """
 Run a Browser Use cloud task from the command line.
 
@@ -11,23 +15,16 @@ Usage:
   export BROWSER_USE_API_KEY=bu_...
   ./tools/browser_use_agent.py "open hackernews and summarize the top 3 stories"
 
-Install the SDK once per machine:
-  uv tool install browser-use-sdk
-  # or: pipx install browser-use-sdk
+The shebang runs the script via `uv` which auto-installs browser-use-sdk
+into an ephemeral env on first run. Requires uv >= 0.4
+(https://docs.astral.sh/uv/). If you don't want the shebang, invoke it as:
+  uv run ./tools/browser_use_agent.py "your task"
 """
 import argparse
 import os
 import sys
 
-try:
-    from browser_use_sdk.v3 import BrowserUse
-except ImportError:
-    sys.stderr.write(
-        "browser-use-sdk is not installed.\n"
-        "Install it with:  uv tool install browser-use-sdk\n"
-        "or:               pipx install browser-use-sdk\n"
-    )
-    sys.exit(2)
+from browser_use_sdk.v3 import BrowserUse
 
 
 def main() -> int:
