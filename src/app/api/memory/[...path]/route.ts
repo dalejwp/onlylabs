@@ -11,7 +11,6 @@ function joinPath(parts: string[]): string | null {
   // Basic sanity: no leading/trailing slashes, no "..", no control chars.
   if (joined.startsWith("/") || joined.endsWith("/")) return null;
   if (joined.split("/").some((seg) => seg === "" || seg === "." || seg === "..")) return null;
-  // eslint-disable-next-line no-control-regex
   if (/[\x00-\x1f\x7f]/.test(joined)) return null;
   if (joined.length > 512) return null;
   return joined;
