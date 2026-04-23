@@ -105,3 +105,4 @@ Required secrets in GitHub:
 
 - [Golden Path Runbook](docs/golden-path.md) — build / run / deploy / rollback
 - [Monitoring Guide](docs/monitoring.md) — Prometheus metrics + alert rules
+- [Cloud Memory + MCP Setup](docs/cloud-memory-setup.md) — register Claude Code against Mission Control for cross-device persistent memory and Browser Use automation
