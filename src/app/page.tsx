@@ -90,7 +90,12 @@ export default function Home() {
   }
 
   useEffect(() => {
-    refresh();
+    let cancelled = false;
+    (async () => {
+      const res = await fetch("/api/tasks", { cache: "no-store" });
+      const j = await res.json();
+      if (!cancelled) setTasks(j.tasks ?? []);
+    })();
     const es = new EventSource("/api/sse");
     es.onmessage = (msg) => {
       try {
@@ -98,7 +103,10 @@ export default function Home() {
         if (evt.type?.startsWith("task.")) refresh();
       } catch {}
     };
-    return () => es.close();
+    return () => {
+      cancelled = true;
+      es.close();
+    };
   }, []);
 
   async function createTask() {

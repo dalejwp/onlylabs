@@ -1,7 +1,20 @@
 import { Registry, Counter, Gauge, collectDefaultMetrics } from 'prom-client';
 
+type McMetrics = {
+  registry: Registry;
+  tasksCreatedTotal: Counter;
+  tasksMovedTotal: Counter<'from_status' | 'to_status'>;
+  jobsEnqueuedTotal: Counter<'job_type'>;
+  idempotencyHitsTotal: Counter;
+  idempotencyMissesTotal: Counter;
+  dbErrorsTotal: Counter<'route'>;
+  http5xxTotal: Counter<'route'>;
+  preflightSuccess: Gauge;
+  uptimeSeconds: Gauge;
+};
+
 // Singleton — safe across Next.js hot reloads and multiple module evaluations
-const g = globalThis as any;
+const g = globalThis as unknown as { __mcMetrics?: McMetrics };
 
 if (!g.__mcMetrics) {
   const reg = new Registry();
@@ -92,15 +105,4 @@ export const {
   http5xxTotal,
   preflightSuccess,
   uptimeSeconds,
-} = g.__mcMetrics as {
-  registry: Registry;
-  tasksCreatedTotal: Counter;
-  tasksMovedTotal: Counter<'from_status' | 'to_status'>;
-  jobsEnqueuedTotal: Counter<'job_type'>;
-  idempotencyHitsTotal: Counter;
-  idempotencyMissesTotal: Counter;
-  dbErrorsTotal: Counter<'route'>;
-  http5xxTotal: Counter<'route'>;
-  preflightSuccess: Gauge;
-  uptimeSeconds: Gauge;
-};
+} = g.__mcMetrics!;
