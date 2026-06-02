@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { TaskStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { emitEvent } from "@/lib/events";
 import { sendEmail } from "@/lib/matonMail";
@@ -85,7 +86,7 @@ export async function PATCH(req: Request) {
 
     const task = await prisma.task.update({
       where: { id: taskId },
-      data: { status: toStatus as any },
+      data: { status: toStatus as TaskStatus },
     });
 
     await prisma.taskEvent.create({

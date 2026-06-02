@@ -14,7 +14,7 @@ export async function withIdempotency(
   const key = req.headers.get('idempotency-key');
   if (!key) return handler(req);
 
-  const existing = await (prisma as any).idempotencyRecord.findUnique({ where: { key } });
+  const existing = await prisma.idempotencyRecord.findUnique({ where: { key } });
 
   if (existing) {
     if (new Date() < new Date(existing.expiresAt)) {
@@ -25,7 +25,7 @@ export async function withIdempotency(
         headers: { 'X-Idempotency-Replayed': 'true' },
       });
     }
-    await (prisma as any).idempotencyRecord.delete({ where: { key } }).catch(() => {});
+    await prisma.idempotencyRecord.delete({ where: { key } }).catch(() => {});
   }
 
   idempotencyMissesTotal.inc();
@@ -33,7 +33,7 @@ export async function withIdempotency(
 
   try {
     const responseBody = await response.clone().json().catch(() => ({}));
-    await (prisma as any).idempotencyRecord.create({
+    await prisma.idempotencyRecord.create({
       data: {
         key,
         status:    response.status,

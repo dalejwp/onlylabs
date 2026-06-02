@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'artifact not found' }, { status: 404 });
     }
 
-    const job = await (prisma as any).job.create({
+    const job = await prisma.job.create({
       data: {
         jobType: 'run-from-artifact',
         payload: JSON.stringify({ artifactId, meta: body.meta ?? {} }),
